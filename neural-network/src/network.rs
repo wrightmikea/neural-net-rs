@@ -74,7 +74,7 @@ impl Network {
 
         for i in (0..self.layers.len() -1).rev(){
            
-            gradients = gradients.elementwise_multiply(&errors).map(|x| x * 0.5); // learning rate
+            gradients = gradients.elementwise_multiply(&errors).map(|x| x * self.learning_rate);
            
            
             

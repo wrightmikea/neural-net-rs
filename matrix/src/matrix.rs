@@ -1,7 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Mul};
 use rand::Rng;
-use crate::macros::*;
 
 #[derive(Debug,Clone)]
 pub struct Matrix {
@@ -23,8 +21,8 @@ impl Matrix {
 		}
 
         let mut result_data = vec![0.0; self.cols * self.rows];
-        for i in 0..self.data.len() { // double check this
-            result_data[i] = self.data[i] * other.data[i]
+        for (i, &val) in self.data.iter().enumerate() {
+            result_data[i] = val * other.data[i]
         }
 
         Matrix {
@@ -151,18 +149,20 @@ impl Matrix {
         }
     }
 
-    pub fn map(&mut self, func: fn(&f64) -> f64) -> Matrix
-{
-    let mut result = Matrix {
-        rows: self.rows,
-        cols: self.cols,
-        data: Vec::with_capacity(self.data.len()),
-    };
+    pub fn map<F>(&mut self, func: F) -> Matrix
+    where
+        F: Fn(&f64) -> f64,
+    {
+        let mut result = Matrix {
+            rows: self.rows,
+            cols: self.cols,
+            data: Vec::with_capacity(self.data.len()),
+        };
 
-    result.data.extend(self.data.iter().map(|&val| func(&val)));
+        result.data.extend(self.data.iter().map(func));
 
-    result
-}
+        result
+    }
 
 
 }
@@ -218,7 +218,7 @@ mod tests {
         assert_eq!(matrix.data.len(), rows * cols);
 
         for &num in &matrix.data {
-            assert!(num >= 0.0 && num < 1.0);
+            assert!((0.0..1.0).contains(&num));
         }
     }
 

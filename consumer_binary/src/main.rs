@@ -3,7 +3,11 @@ use neural_network::activations::SIGMOID;
 use neural_network::matrix::Matrix;
 use std::env;
 fn main() {
-	env::set_var("RUST_BACKTRACE", "1");
+	// SAFETY: This is safe because we're setting the environment variable
+	// at the start of main, before any threads are spawned.
+	unsafe {
+		env::set_var("RUST_BACKTRACE", "1");
+	}
     let inputs = vec![
 		vec![0.0, 0.0],
 		vec![0.0, 1.0],
