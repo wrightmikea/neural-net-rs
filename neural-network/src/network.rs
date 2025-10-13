@@ -1,16 +1,18 @@
 use matrix::matrix::Matrix;
+use serde::{Serialize, Deserialize};
 
 use crate::activations::Activation;
 
 
-#[derive( Builder)]
-pub struct Network { 
-    layers:Vec<usize>, // amount of neurons in each layer, [72,16,10]
-    weights: Vec<Matrix>,
-    biases: Vec<Matrix>,
+#[derive(Builder, Serialize, Deserialize)]
+pub struct Network {
+    pub layers: Vec<usize>, // amount of neurons in each layer, [72,16,10]
+    pub weights: Vec<Matrix>,
+    pub biases: Vec<Matrix>,
+    #[serde(skip)]
     data: Vec<Matrix>,
-    activation: Activation,
-    learning_rate: f64,
+    pub activation: Activation,
+    pub learning_rate: f64,
 }
 
 impl Network {

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nUpgrade to Rust 2024 edition and fix all warnings\n\nUpgrades all crates to Rust 2024 edition, adds workspace resolver 2, and fixes all build and clippy warnings including unused imports, needless loops, manual range checks, and unsafe env::set_var requirement. Also adds CLAUDE.md documentation for future development.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(cargo run:*)",
+      "Bash(rustc:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
