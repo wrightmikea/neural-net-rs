@@ -87,22 +87,51 @@ fn cmd_list() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Train a neural network (scaffold implementation)
+/// Train a neural network
 fn cmd_train(
     example: &str,
-    _epochs: u32,
-    _learning_rate: f64,
-    _output: Option<String>,
+    epochs: u32,
+    learning_rate: f64,
+    output: Option<String>,
 ) -> anyhow::Result<()> {
-    use neural_network::examples;
+    use neural_network::{activations::SIGMOID, checkpoint::CheckpointMetadata, examples, network::Network};
+    use std::path::Path;
 
-    // Validate example exists
-    if examples::get_example(example).is_none() {
-        anyhow::bail!("Unknown example: {}. Use 'list' to see available examples.", example);
+    // Load example
+    let ex = examples::get_example(example)
+        .ok_or_else(|| anyhow::anyhow!("Unknown example: {}. Use 'list' to see available examples.", example))?;
+
+    println!("Training {} network", ex.name);
+    println!("Architecture: {:?}", ex.recommended_arch);
+    println!("Epochs: {}", epochs);
+    println!("Learning rate: {}", learning_rate);
+    println!();
+
+    // Create network with recommended architecture
+    let mut network = Network::new(ex.recommended_arch.clone(), SIGMOID, learning_rate);
+
+    // Train network
+    println!("Training...");
+    network.train(ex.inputs.clone(), ex.targets.clone(), epochs);
+    println!("Training complete!");
+
+    // Save model if output path specified
+    if let Some(output_path) = output {
+        println!();
+        println!("Saving model to: {}", output_path);
+
+        let metadata = CheckpointMetadata {
+            version: "1.0".to_string(),
+            example: ex.name.to_string(),
+            epoch: epochs,
+            total_epochs: epochs,
+            learning_rate,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        };
+
+        network.save_checkpoint(Path::new(&output_path), metadata)?;
+        println!("Model saved successfully!");
     }
-
-    println!("Training on example: {}", example);
-    println!("(Full training implementation coming in Task 1.5)");
 
     Ok(())
 }

@@ -7,3 +7,7 @@ edition = "2024"
 clap = { version = "4", features = ["derive"] }
 neural-network = { path = "../neural-network" }
 anyhow = "1"
+chrono = "0.4"
+
+[dev-dependencies]
+serde_json = "1"
