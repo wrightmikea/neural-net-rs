@@ -208,10 +208,55 @@ fn cmd_resume(checkpoint: &str, epochs: u32, output: Option<String>) -> anyhow::
     Ok(())
 }
 
-/// Evaluate a model (scaffold implementation)
-fn cmd_eval(_model: &str, _input: Option<String>) -> anyhow::Result<()> {
-    println!("Eval command scaffold");
-    println!("(Full eval implementation coming in Phase 3)");
+/// Evaluate a trained model
+fn cmd_eval(model: &str, input: Option<String>) -> anyhow::Result<()> {
+    use neural_network::network::Network;
+    use std::path::Path;
+
+    let model_path = Path::new(model);
+
+    // Load model
+    let (mut network, metadata) = Network::load_checkpoint(model_path)?;
+
+    // Display model info
+    println!("Loaded model: {}", model);
+    println!("  Example: {}", metadata.example);
+    println!("  Architecture: {:?}", network.layers);
+    println!("  Training epochs: {}", metadata.epoch);
+    println!("  Learning rate: {}", metadata.learning_rate);
+    println!();
+
+    // Parse input if provided
+    if let Some(input_str) = input {
+        let inputs: Result<Vec<f64>, _> = input_str
+            .split(',')
+            .map(|s| s.trim().parse::<f64>())
+            .collect();
+
+        let inputs = inputs.map_err(|e| {
+            anyhow::anyhow!("Invalid input format: {}. Expected comma-separated numbers (e.g., '0.0,1.0')", e)
+        })?;
+
+        // Validate input dimensions
+        if inputs.len() != network.layers[0] {
+            anyhow::bail!(
+                "Invalid input dimensions: expected {} inputs, got {}",
+                network.layers[0],
+                inputs.len()
+            );
+        }
+
+        // Run prediction
+        let input_matrix = neural_network::matrix::Matrix::from(inputs.clone());
+        let output = network.feed_forward(input_matrix);
+
+        // Display results
+        println!("Input: {:?}", inputs);
+        println!("Output: {:?}", output.data);
+    } else {
+        println!("No input provided. Use --input <values> to make a prediction.");
+        println!("Example: --input 0.0,1.0");
+    }
 
     Ok(())
 }
