@@ -775,6 +775,49 @@ A | B | C | Count of 1s | Parity | Output
 1 | 1 | 1 |     3       |  odd   |   1
 ```
 
+### Quadrant Classification Visualization
+
+![Quadrant Classification Network Visualization](images/quadrant_network.svg)
+
+**Architecture**: [2, 4, 4] - **Total Parameters**: 32 (24 weights + 8 biases)
+
+Quadrant classification is the first **multi-class output** example, introducing one-hot encoding where each output neuron represents a different class. The network classifies 2D points (x, y) into four quadrants based on the signs of their coordinates.
+
+This demonstrates a key architectural change: **multiple output neurons** instead of a single output:
+
+- **Input Layer** (2 neurons): Receives 2D coordinates (x, y)
+- **Hidden Layer** (4 neurons): Creates decision boundaries for the four regions
+  - Each hidden neuron learns to detect combinations of positive/negative coordinates
+  - Hidden neuron patterns: (+x, +y), (-x, +y), (-x, -y), (+x, -y)
+  - The network essentially learns two XOR-like boundaries (one for x, one for y)
+- **Output Layer** (4 neurons): One neuron per quadrant (one-hot encoding)
+  - Output neuron 0: Quadrant I (x > 0, y > 0)
+  - Output neuron 1: Quadrant II (x < 0, y > 0)
+  - Output neuron 2: Quadrant III (x < 0, y < 0)
+  - Output neuron 3: Quadrant IV (x > 0, y < 0)
+  - The network learns to activate exactly one output neuron for each input
+
+**Why 32 parameters?** The parameter count comes from:
+- 2×4 = 8 weights (input to hidden layer)
+- 4 hidden layer biases
+- 4×4 = 16 weights (hidden to output layer) - **This is the key increase**
+- 4 output biases
+- Total: 8 + 4 + 16 + 4 = 32 parameters
+
+**Key Insight**: Moving from 1 output (binary classification) to 4 outputs (multi-class) increases parameters significantly. The hidden-to-output weights go from 4×1 = 4 (in XOR) to 4×4 = 16 (in quadrant), a **4× increase** in that layer alone.
+
+**Classification Examples:**
+```
+Input (x, y)  | Quadrant | One-Hot Output
+--------------+----------+------------------
+( 1.0,  1.0)  |    I     | [1, 0, 0, 0]
+(-1.0,  1.0)  |   II     | [0, 1, 0, 0]
+(-1.0, -1.0)  |   III    | [0, 0, 1, 0]
+( 1.0, -1.0)  |   IV     | [0, 0, 0, 1]
+```
+
+This example shows that even though the problem is **linearly separable** (you can divide the plane with two lines at x=0 and y=0), the one-hot encoding and multiple outputs create additional complexity compared to simpler binary problems.
+
 ## Technical Stack
 
 - **Language**: Rust 2024 Edition

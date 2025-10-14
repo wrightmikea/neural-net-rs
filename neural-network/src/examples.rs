@@ -136,6 +136,50 @@ pub fn get_example(name: &str) -> Option<Example> {
             recommended_lr: 0.5,
         }),
 
+        "quadrant" => Some(Example {
+            name: "quadrant",
+            description: "Quadrant classification - classifies 2D points into 4 quadrants. First multi-class output example.",
+            inputs: vec![
+                // Quadrant I: x > 0, y > 0 -> [1, 0, 0, 0]
+                vec![1.0, 1.0],
+                vec![0.8, 0.6],
+                vec![0.5, 0.9],
+                // Quadrant II: x < 0, y > 0 -> [0, 1, 0, 0]
+                vec![-1.0, 1.0],
+                vec![-0.8, 0.6],
+                vec![-0.5, 0.9],
+                // Quadrant III: x < 0, y < 0 -> [0, 0, 1, 0]
+                vec![-1.0, -1.0],
+                vec![-0.8, -0.6],
+                vec![-0.5, -0.9],
+                // Quadrant IV: x > 0, y < 0 -> [0, 0, 0, 1]
+                vec![1.0, -1.0],
+                vec![0.8, -0.6],
+                vec![0.5, -0.9],
+            ],
+            targets: vec![
+                // Quadrant I
+                vec![1.0, 0.0, 0.0, 0.0],
+                vec![1.0, 0.0, 0.0, 0.0],
+                vec![1.0, 0.0, 0.0, 0.0],
+                // Quadrant II
+                vec![0.0, 1.0, 0.0, 0.0],
+                vec![0.0, 1.0, 0.0, 0.0],
+                vec![0.0, 1.0, 0.0, 0.0],
+                // Quadrant III
+                vec![0.0, 0.0, 1.0, 0.0],
+                vec![0.0, 0.0, 1.0, 0.0],
+                vec![0.0, 0.0, 1.0, 0.0],
+                // Quadrant IV
+                vec![0.0, 0.0, 0.0, 1.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+                vec![0.0, 0.0, 0.0, 1.0],
+            ],
+            recommended_arch: vec![2, 4, 4],
+            recommended_epochs: 10000,
+            recommended_lr: 0.5,
+        }),
+
         _ => None,
     }
 }
@@ -155,7 +199,7 @@ pub fn get_example(name: &str) -> Option<Example> {
 /// assert!(examples.contains(&"xor"));
 /// ```
 pub fn list_examples() -> Vec<&'static str> {
-    vec!["and", "or", "xor", "parity3"]
+    vec!["and", "or", "xor", "parity3", "quadrant"]
 }
 
 #[cfg(test)]
