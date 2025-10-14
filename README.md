@@ -624,6 +624,117 @@ cargo run --bin neural-net-cli -- resume \
 - **Description**: Logical XOR operation (classic non-linear problem)
 - **Difficulty**: Moderate (requires hidden layer)
 
+## Network Architecture Visualizations
+
+Visualize trained neural networks with interactive SVG diagrams showing weights, biases, and network structure.
+
+### Generating Visualizations
+
+```bash
+# Train a network and save checkpoint
+cargo run --bin neural-net-cli -- train --example xor --epochs 10000 --output xor_checkpoint.json
+
+# Generate interactive SVG visualization
+cargo run --bin visualize -- --checkpoint xor_checkpoint.json --output network.svg
+
+# Open in browser to zoom and interact
+open network.svg
+```
+
+**Options:**
+- `--checkpoint <FILE>`: Path to checkpoint file (required)
+- `--output <FILE>`: Output SVG file path (required)
+- `--width <PIXELS>`: Canvas width (default: 1200)
+- `--height <PIXELS>`: Canvas height (default: 800)
+- `--show-values`: Display weight values as text on connections
+
+### Visualization Features
+
+- **Color-coded weights**: Blue lines = positive weights, Red lines = negative weights
+- **Weight magnitude**: Line thickness represents absolute weight value
+- **Interactive tooltips**: Hover over neurons to see bias values, hover over connections to see exact weights
+- **Zoomable SVG**: Smooth zooming in browsers for detailed inspection
+- **Network statistics**: Displays architecture, parameter count, and training metadata
+
+### Understanding the Visualizations
+
+Each visualization shows:
+- **Neurons (circles)**: Numbered nodes arranged in layers
+- **Connections (lines)**: Weighted connections between layers
+- **Layer labels**: Input, Hidden, and Output layer identification
+- **Legend**: Color and thickness interpretation guide
+
+Hover over any element to see detailed information including exact weight and bias values.
+
+### AND Gate Visualization
+
+![AND Network Visualization](images/and_network.svg)
+
+**Architecture**: [2, 2, 1] - **Total Parameters**: 9 (6 weights + 3 biases)
+
+The AND gate is **linearly separable**, meaning a simple perceptron could solve it. However, this implementation uses a hidden layer for consistency. Notice how the network learns:
+
+- **Input Layer** (2 neurons): Receives the two binary inputs (A, B)
+- **Hidden Layer** (2 neurons): Creates decision boundaries
+  - Hidden neurons detect when inputs are active
+  - Biases adjust the activation thresholds
+- **Output Layer** (1 neuron): Combines hidden layer signals
+  - Strong positive weights from both hidden neurons
+  - Output activates only when BOTH inputs are 1
+
+The trained weights show clear patterns: the network learns that it needs strong activation from both inputs simultaneously to produce output 1.
+
+### OR Gate Visualization
+
+![OR Network Visualization](images/or_network.svg)
+
+**Architecture**: [2, 2, 1] - **Total Parameters**: 9 (6 weights + 3 biases)
+
+The OR gate is also **linearly separable**. The network learns a simpler decision boundary than XOR:
+
+- **Input Layer** (2 neurons): Receives inputs A and B
+- **Hidden Layer** (2 neurons): Each neuron primarily responds to one input
+  - Hidden neuron 0: Strongly responds to input A
+  - Hidden neuron 1: Strongly responds to input B
+- **Output Layer** (1 neuron): Uses positive weights to combine signals
+  - Activates when EITHER input is active
+  - Output = 1 when A OR B is 1
+
+The weight pattern reveals how the network implements logical OR: it creates parallel pathways where either input can trigger the output through its corresponding hidden neuron.
+
+### XOR Gate Visualization
+
+![XOR Network Visualization](images/xor_network.svg)
+
+**Architecture**: [2, 3, 1] - **Total Parameters**: 13 (9 weights + 4 biases)
+
+XOR is the classic **non-linearly separable** problem. You cannot draw a single straight line to separate the 1 cases (0,1 and 1,0) from the 0 cases (0,0 and 1,1). This is why XOR was historically important in demonstrating the need for multi-layer networks.
+
+The network learns to decompose XOR into simpler operations:
+
+- **Input Layer** (2 neurons): Receives inputs A and B
+- **Hidden Layer** (3 neurons): Creates non-linear decision boundaries
+  - **Hidden neuron 0**: Detects when input A is active (~11.8, ~8.3)
+  - **Hidden neuron 1**: Detects when input B is active (~11.0, ~7.5)
+  - **Hidden neuron 2**: Detects when BOTH inputs are active (~13.3, **-9.1**)
+    - Note the negative weight! This is the key to XOR
+    - Creates an "inhibitory" signal when both inputs are on
+- **Output Layer** (1 neuron): Implements **(A OR B) AND NOT (A AND B)**
+  - Positive weights from neurons 0 and 1: "Activate if A or B" (~2.9, ~2.0)
+  - Strong negative weight from neuron 2: "BUT NOT if both" (**-4.68**)
+  - This combination produces: Output = 1 when inputs are different
+
+**Why only 13 parameters?** XOR is actually one of the simplest non-linear problems. The 3 hidden neurons create just enough complexity to form the required decision boundaries. This is why XOR became the canonical example for demonstrating that neural networks can learn non-linear functions - it's the minimal case that proves the concept.
+
+**Truth Table Implementation:**
+```
+A | B | H0 | H1 | H2 | Output
+0 | 0 | -  | -  | +  |   0      (inhibited by H2)
+0 | 1 | -  | +  | -  |   1      (activated by H1)
+1 | 0 | +  | -  | -  |   1      (activated by H0)
+1 | 1 | +  | +  | ++ |   0      (H2 inhibits H0+H1)
+```
+
 ## Technical Stack
 
 - **Language**: Rust 2024 Edition
