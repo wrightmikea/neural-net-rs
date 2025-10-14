@@ -126,7 +126,8 @@ fn cmd_train(
     learning_rate: f64,
     output: Option<String>,
 ) -> anyhow::Result<()> {
-    use neural_network::{activations::SIGMOID, checkpoint::CheckpointMetadata, examples, network::Network};
+    use indicatif::{ProgressBar, ProgressStyle};
+    use neural_network::{activations::SIGMOID, examples, network::Network, training::{TrainingConfig, TrainingController}};
     use std::path::Path;
 
     // Load example
@@ -140,28 +141,47 @@ fn cmd_train(
     println!();
 
     // Create network with recommended architecture
-    let mut network = Network::new(ex.recommended_arch.clone(), SIGMOID, learning_rate);
+    let network = Network::new(ex.recommended_arch.clone(), SIGMOID, learning_rate);
+
+    // Create training config
+    let config = TrainingConfig {
+        epochs,
+        checkpoint_interval: if output.is_some() { Some(epochs) } else { None },
+        checkpoint_path: output.as_ref().map(|p| Path::new(p).to_path_buf()),
+        verbose: false,
+        example_name: Some(ex.name.to_string()),
+    };
+
+    // Create training controller
+    let mut controller = TrainingController::new(network, config);
+
+    // Setup progress bar
+    let pb = ProgressBar::new(epochs as u64);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{msg} [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+            .unwrap()
+            .progress_chars("#>-"),
+    );
+    pb.set_message("Training");
+
+    // Add progress callback (clone pb for the closure)
+    let pb_clone = pb.clone();
+    controller.add_callback(Box::new(move |epoch, loss, _network| {
+        pb_clone.set_position(epoch as u64);
+        if epoch % 100 == 0 || epoch == 1 {
+            pb_clone.set_message(format!("Training (loss: {:.6})", loss));
+        }
+    }));
 
     // Train network
-    println!("Training...");
-    network.train(ex.inputs.clone(), ex.targets.clone(), epochs);
-    println!("Training complete!");
+    controller.train(ex.inputs.clone(), ex.targets.clone())?;
+    pb.finish_with_message("Training complete!");
 
     // Save model if output path specified
     if let Some(output_path) = output {
         println!();
         println!("Saving model to: {}", output_path);
-
-        let metadata = CheckpointMetadata {
-            version: "1.0".to_string(),
-            example: ex.name.to_string(),
-            epoch: epochs,
-            total_epochs: epochs,
-            learning_rate,
-            timestamp: chrono::Utc::now().to_rfc3339(),
-        };
-
-        network.save_checkpoint(Path::new(&output_path), metadata)?;
         println!("Model saved successfully!");
     }
 
@@ -200,6 +220,7 @@ fn cmd_resume(checkpoint: &str, epochs: u32, output: Option<String>) -> anyhow::
         checkpoint_interval: if output.is_some() { Some(epochs) } else { None },
         checkpoint_path: output.as_ref().map(|p| Path::new(p).to_path_buf()),
         verbose: false,
+        example_name: Some(metadata.example.clone()),
     };
 
     // Resume training

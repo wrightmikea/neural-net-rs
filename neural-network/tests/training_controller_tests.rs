@@ -12,6 +12,7 @@ fn test_training_controller_basic() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -31,6 +32,7 @@ fn test_training_controller_with_callbacks() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -58,6 +60,7 @@ fn test_training_controller_with_multiple_callbacks() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -91,6 +94,7 @@ fn test_training_controller_auto_checkpoint() {
         checkpoint_interval: Some(25),
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -111,6 +115,7 @@ fn test_training_controller_verbose_mode() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: true,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -128,6 +133,7 @@ fn test_training_controller_returns_trained_network() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);
@@ -154,6 +160,7 @@ fn test_training_config_defaults() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     assert_eq!(config.epochs, 1000);
@@ -173,6 +180,7 @@ fn test_training_controller_checkpoint_at_final_epoch() {
         checkpoint_interval: Some(50), // Checkpoint at final epoch
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = neural_network::training::TrainingController::new(network, config);

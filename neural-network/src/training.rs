@@ -10,6 +10,7 @@ pub struct TrainingConfig {
     pub checkpoint_interval: Option<u32>,
     pub checkpoint_path: Option<PathBuf>,
     pub verbose: bool,
+    pub example_name: Option<String>,
 }
 
 /// Callback function type for training progress
@@ -85,7 +86,7 @@ impl TrainingController {
                 && epoch % interval == 0 {
                     let metadata = CheckpointMetadata {
                         version: "1.0".to_string(),
-                        example: "training".to_string(),
+                        example: self.config.example_name.clone().unwrap_or_else(|| "training".to_string()),
                         epoch,
                         total_epochs: self.config.epochs,
                         learning_rate: self.network.learning_rate,

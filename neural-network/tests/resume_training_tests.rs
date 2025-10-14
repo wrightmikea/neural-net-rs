@@ -22,6 +22,7 @@ fn test_resume_from_checkpoint_basic() {
         checkpoint_interval: Some(50),
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = TrainingController::new(network, config);
@@ -39,6 +40,7 @@ fn test_resume_from_checkpoint_basic() {
             checkpoint_interval: None,
             checkpoint_path: None,
             verbose: false,
+            example_name: None,
         },
     )
     .expect("Should load from checkpoint");
@@ -83,6 +85,7 @@ fn test_resume_preserves_network_state() {
             checkpoint_interval: None,
             checkpoint_path: None,
             verbose: false,
+            example_name: None,
         },
     )
     .unwrap();
@@ -108,6 +111,7 @@ fn test_resume_with_continued_training() {
         checkpoint_interval: Some(50),
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = TrainingController::new(network, config);
@@ -129,6 +133,7 @@ fn test_resume_with_continued_training() {
             checkpoint_interval: None,
             checkpoint_path: None,
             verbose: false,
+            example_name: None,
         },
     )
     .unwrap();
@@ -155,6 +160,7 @@ fn test_resume_with_callbacks() {
         checkpoint_interval: Some(10),
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = TrainingController::new(network, config);
@@ -168,6 +174,7 @@ fn test_resume_with_callbacks() {
             checkpoint_interval: None,
             checkpoint_path: None,
             verbose: false,
+            example_name: None,
         },
     )
     .unwrap();
@@ -194,6 +201,7 @@ fn test_resume_nonexistent_checkpoint() {
         checkpoint_interval: None,
         checkpoint_path: None,
         verbose: false,
+        example_name: None,
     };
 
     let result = TrainingController::from_checkpoint(&checkpoint_path, config);
@@ -213,6 +221,7 @@ fn test_resume_with_new_checkpoint_path() {
         checkpoint_interval: Some(10),
         checkpoint_path: Some(old_checkpoint.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = TrainingController::new(network, config);
@@ -227,6 +236,7 @@ fn test_resume_with_new_checkpoint_path() {
             checkpoint_interval: Some(10),
             checkpoint_path: Some(new_checkpoint.clone()),
             verbose: false,
+            example_name: None,
         },
     )
     .unwrap();
@@ -249,6 +259,7 @@ fn test_resume_metadata_continuity() {
         checkpoint_interval: Some(50),
         checkpoint_path: Some(checkpoint_path.clone()),
         verbose: false,
+        example_name: None,
     };
 
     let mut controller = TrainingController::new(network, config);
@@ -266,6 +277,7 @@ fn test_resume_metadata_continuity() {
             checkpoint_interval: None,
             checkpoint_path: None,
             verbose: false,
+            example_name: None,
         },
     )
     .unwrap();
