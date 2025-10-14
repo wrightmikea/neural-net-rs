@@ -818,6 +818,52 @@ Input (x, y)  | Quadrant | One-Hot Output
 
 This example shows that even though the problem is **linearly separable** (you can divide the plane with two lines at x=0 and y=0), the one-hot encoding and multiple outputs create additional complexity compared to simpler binary problems.
 
+### 2-bit Binary Adder Visualization
+
+![2-bit Adder Network Visualization](images/adder2_network.svg)
+
+**Architecture**: [4, 8, 3] - **Total Parameters**: 67 (56 weights + 11 biases)
+
+The 2-bit binary adder demonstrates **arithmetic learning** - the network learns to perform addition by discovering the rules of binary arithmetic through training. This is a significant complexity increase, more than doubling the parameters from the quadrant classifier.
+
+The network adds two 2-bit numbers (A and B, each 0-3) to produce a 3-bit sum (0-6):
+
+- **Input Layer** (4 neurons): Receives two 2-bit numbers [A1, A0, B1, B0]
+  - A = A1×2 + A0, B = B1×2 + B0
+  - Example: [1, 0, 1, 1] represents 2 + 3 = 5
+- **Hidden Layer** (8 neurons): Learns arithmetic patterns and carry logic
+  - Must detect when carry bits propagate (e.g., 1+1 = 10 in binary)
+  - Learns relationships between input bits and sum bits
+  - More neurons needed than previous examples to capture arithmetic complexity
+  - Hidden neurons implicitly learn: bit-wise XOR, bit-wise AND, carry propagation
+- **Output Layer** (3 neurons): Produces 3-bit binary sum [S2, S1, S0]
+  - Maximum sum: 3 + 3 = 6 = 110₂, requiring 3 output bits
+  - Each output neuron represents a bit position in the result
+
+**Why 67 parameters?** This is more than double the quadrant classifier:
+- 4×8 = 32 weights (input to hidden) - **4× increase from XOR's input layer**
+- 8 hidden biases - **2× increase from quadrant**
+- 8×3 = 24 weights (hidden to output) - **1.5× increase from quadrant**
+- 3 output biases
+- Total: 32 + 8 + 24 + 3 = 67 parameters
+
+**Key Insights:**
+1. **Input complexity matters**: 4 inputs vs 2 inputs quadruples the input-to-hidden weights
+2. **Hidden layer size**: 8 neurons needed vs 4 for quadrant - arithmetic requires more representation capacity
+3. **Arithmetic is harder than classification**: Even though we have fewer test cases (16) than we could, the arithmetic relationships are more complex than geometric quadrants
+
+**Addition Examples:**
+```
+Input [A1,A0,B1,B0] | A | B | Sum | Output [S2,S1,S0] | Binary
+--------------------+---+---+-----+-------------------+--------
+[0, 0, 0, 0]        | 0 | 0 |  0  | [0, 0, 0]         | 000
+[0, 1, 0, 1]        | 1 | 1 |  2  | [0, 1, 0]         | 010
+[1, 0, 1, 0]        | 2 | 2 |  4  | [1, 0, 0]         | 100
+[1, 1, 1, 1]        | 3 | 3 |  6  | [1, 1, 0]         | 110
+```
+
+The network learns this without explicit carry bit logic - it discovers binary addition rules purely from examples!
+
 ## Technical Stack
 
 - **Language**: Rust 2024 Edition

@@ -180,6 +180,52 @@ pub fn get_example(name: &str) -> Option<Example> {
             recommended_lr: 0.5,
         }),
 
+        "adder2" => Some(Example {
+            name: "adder2",
+            description: "2-bit binary adder - adds two 2-bit numbers. Demonstrates arithmetic learning with multi-bit outputs.",
+            inputs: vec![
+                // Format: [A1, A0, B1, B0] where A = A1*2 + A0, B = B1*2 + B0
+                vec![0.0, 0.0, 0.0, 0.0], // 0 + 0 = 0
+                vec![0.0, 0.0, 0.0, 1.0], // 0 + 1 = 1
+                vec![0.0, 0.0, 1.0, 0.0], // 0 + 2 = 2
+                vec![0.0, 0.0, 1.0, 1.0], // 0 + 3 = 3
+                vec![0.0, 1.0, 0.0, 0.0], // 1 + 0 = 1
+                vec![0.0, 1.0, 0.0, 1.0], // 1 + 1 = 2
+                vec![0.0, 1.0, 1.0, 0.0], // 1 + 2 = 3
+                vec![0.0, 1.0, 1.0, 1.0], // 1 + 3 = 4
+                vec![1.0, 0.0, 0.0, 0.0], // 2 + 0 = 2
+                vec![1.0, 0.0, 0.0, 1.0], // 2 + 1 = 3
+                vec![1.0, 0.0, 1.0, 0.0], // 2 + 2 = 4
+                vec![1.0, 0.0, 1.0, 1.0], // 2 + 3 = 5
+                vec![1.0, 1.0, 0.0, 0.0], // 3 + 0 = 3
+                vec![1.0, 1.0, 0.0, 1.0], // 3 + 1 = 4
+                vec![1.0, 1.0, 1.0, 0.0], // 3 + 2 = 5
+                vec![1.0, 1.0, 1.0, 1.0], // 3 + 3 = 6
+            ],
+            targets: vec![
+                // Output: [S2, S1, S0] where sum = S2*4 + S1*2 + S0
+                vec![0.0, 0.0, 0.0], // 000 = 0
+                vec![0.0, 0.0, 1.0], // 001 = 1
+                vec![0.0, 1.0, 0.0], // 010 = 2
+                vec![0.0, 1.0, 1.0], // 011 = 3
+                vec![0.0, 0.0, 1.0], // 001 = 1
+                vec![0.0, 1.0, 0.0], // 010 = 2
+                vec![0.0, 1.0, 1.0], // 011 = 3
+                vec![1.0, 0.0, 0.0], // 100 = 4
+                vec![0.0, 1.0, 0.0], // 010 = 2
+                vec![0.0, 1.0, 1.0], // 011 = 3
+                vec![1.0, 0.0, 0.0], // 100 = 4
+                vec![1.0, 0.0, 1.0], // 101 = 5
+                vec![0.0, 1.0, 1.0], // 011 = 3
+                vec![1.0, 0.0, 0.0], // 100 = 4
+                vec![1.0, 0.0, 1.0], // 101 = 5
+                vec![1.0, 1.0, 0.0], // 110 = 6
+            ],
+            recommended_arch: vec![4, 8, 3],
+            recommended_epochs: 20000,
+            recommended_lr: 0.5,
+        }),
+
         _ => None,
     }
 }
@@ -199,7 +245,7 @@ pub fn get_example(name: &str) -> Option<Example> {
 /// assert!(examples.contains(&"xor"));
 /// ```
 pub fn list_examples() -> Vec<&'static str> {
-    vec!["and", "or", "xor", "parity3", "quadrant"]
+    vec!["and", "or", "xor", "parity3", "quadrant", "adder2"]
 }
 
 #[cfg(test)]
