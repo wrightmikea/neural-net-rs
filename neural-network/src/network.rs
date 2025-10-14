@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use crate::activations::Activation;
 
 
-#[derive(Builder, Serialize, Deserialize)]
+#[derive(Debug, Clone, Builder, Serialize, Deserialize)]
 pub struct Network {
     pub layers: Vec<usize>, // amount of neurons in each layer, [72,16,10]
     pub weights: Vec<Matrix>,
