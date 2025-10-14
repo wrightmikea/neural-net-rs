@@ -108,6 +108,34 @@ pub fn get_example(name: &str) -> Option<Example> {
             recommended_lr: 0.5,
         }),
 
+        "parity3" => Some(Example {
+            name: "parity3",
+            description: "3-bit parity - outputs 1 when an odd number of inputs are 1. Extension of XOR to 3 inputs.",
+            inputs: vec![
+                vec![0.0, 0.0, 0.0],
+                vec![0.0, 0.0, 1.0],
+                vec![0.0, 1.0, 0.0],
+                vec![0.0, 1.0, 1.0],
+                vec![1.0, 0.0, 0.0],
+                vec![1.0, 0.0, 1.0],
+                vec![1.0, 1.0, 0.0],
+                vec![1.0, 1.0, 1.0],
+            ],
+            targets: vec![
+                vec![0.0], // 0 ones -> even
+                vec![1.0], // 1 one -> odd
+                vec![1.0], // 1 one -> odd
+                vec![0.0], // 2 ones -> even
+                vec![1.0], // 1 one -> odd
+                vec![0.0], // 2 ones -> even
+                vec![0.0], // 2 ones -> even
+                vec![1.0], // 3 ones -> odd
+            ],
+            recommended_arch: vec![3, 4, 1],
+            recommended_epochs: 15000,
+            recommended_lr: 0.5,
+        }),
+
         _ => None,
     }
 }
@@ -127,7 +155,7 @@ pub fn get_example(name: &str) -> Option<Example> {
 /// assert!(examples.contains(&"xor"));
 /// ```
 pub fn list_examples() -> Vec<&'static str> {
-    vec!["and", "or", "xor"]
+    vec!["and", "or", "xor", "parity3"]
 }
 
 #[cfg(test)]
@@ -146,28 +174,36 @@ mod tests {
         for name in list_examples() {
             let ex = get_example(name).unwrap();
 
-            // Must have 4 test cases (all combinations of 2 binary inputs)
-            assert_eq!(ex.inputs.len(), 4);
-            assert_eq!(ex.targets.len(), 4);
+            // Must have at least one test case
+            assert!(!ex.inputs.is_empty(), "Example {} has no inputs", name);
+            assert_eq!(ex.inputs.len(), ex.targets.len(),
+                "Example {} has mismatched inputs/targets", name);
 
-            // All inputs must be 2D
+            // All inputs must have consistent dimensions
+            let input_size = ex.inputs[0].len();
             for input in &ex.inputs {
-                assert_eq!(input.len(), 2);
+                assert_eq!(input.len(), input_size,
+                    "Example {} has inconsistent input dimensions", name);
             }
 
-            // All targets must be 1D
+            // All targets must have consistent dimensions
+            let output_size = ex.targets[0].len();
             for target in &ex.targets {
-                assert_eq!(target.len(), 1);
+                assert_eq!(target.len(), output_size,
+                    "Example {} has inconsistent target dimensions", name);
             }
 
             // Architecture must have at least 3 layers
-            assert!(ex.recommended_arch.len() >= 3);
+            assert!(ex.recommended_arch.len() >= 3,
+                "Example {} needs at least 3 layers", name);
 
-            // First layer should be 2 (2 inputs)
-            assert_eq!(ex.recommended_arch[0], 2);
+            // First layer should match input size
+            assert_eq!(ex.recommended_arch[0], input_size,
+                "Example {} first layer should be {}", name, input_size);
 
-            // Last layer should be 1 (1 output)
-            assert_eq!(ex.recommended_arch[ex.recommended_arch.len() - 1], 1);
+            // Last layer should match output size
+            assert_eq!(ex.recommended_arch[ex.recommended_arch.len() - 1], output_size,
+                "Example {} last layer should be {}", name, output_size);
 
             // Reasonable hyperparameters
             assert!(ex.recommended_epochs > 0);

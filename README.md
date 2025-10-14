@@ -735,6 +735,46 @@ A | B | H0 | H1 | H2 | Output
 1 | 1 | +  | +  | ++ |   0      (H2 inhibits H0+H1)
 ```
 
+### 3-bit Parity Visualization
+
+![3-bit Parity Network Visualization](images/parity3_network.svg)
+
+**Architecture**: [3, 4, 1] - **Total Parameters**: 21 (16 weights + 5 biases)
+
+3-bit parity is a natural extension of XOR - it outputs 1 when an **odd number** of inputs are 1. This problem scales the non-linearity from 2 inputs to 3 inputs, requiring more parameters to learn the pattern.
+
+The network learns to count active inputs modulo 2:
+
+- **Input Layer** (3 neurons): Receives three binary inputs (A, B, C)
+- **Hidden Layer** (4 neurons): Creates complex decision boundaries to detect odd/even patterns
+  - More hidden neurons needed than XOR (4 vs 3) to handle the additional input
+  - Each hidden neuron learns to detect specific combinations of active inputs
+  - Must distinguish between 1, 2, or 3 active inputs
+- **Output Layer** (1 neuron): Combines hidden signals to implement parity function
+  - Outputs 1 for odd counts: (0,0,1), (0,1,0), (1,0,0), (1,1,1)
+  - Outputs 0 for even counts: (0,0,0), (0,1,1), (1,0,1), (1,1,0)
+
+**Why 21 parameters?** With 3 inputs instead of 2, the network needs:
+- 3×4 = 12 weights (input to hidden) vs 2×3 = 6 for XOR
+- 4 hidden layer biases vs 3 for XOR
+- 4×1 = 4 weights (hidden to output) vs 3×1 = 3 for XOR
+- 1 output bias (same as XOR)
+
+This demonstrates how parameter count scales: adding just one more input bit requires **60% more parameters** (13 → 21) to maintain the non-linear decision boundary.
+
+**Truth Table:**
+```
+A | B | C | Count of 1s | Parity | Output
+0 | 0 | 0 |     0       |  even  |   0
+0 | 0 | 1 |     1       |  odd   |   1
+0 | 1 | 0 |     1       |  odd   |   1
+0 | 1 | 1 |     2       |  even  |   0
+1 | 0 | 0 |     1       |  odd   |   1
+1 | 0 | 1 |     2       |  even  |   0
+1 | 1 | 0 |     2       |  even  |   0
+1 | 1 | 1 |     3       |  odd   |   1
+```
+
 ## Technical Stack
 
 - **Language**: Rust 2024 Edition
