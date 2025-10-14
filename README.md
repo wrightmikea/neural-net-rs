@@ -427,6 +427,34 @@ JavaScript is minimal - only for:
 6. View streaming loss metrics
 7. Test the trained network
 
+### Screenshots
+
+The interactive web UI provides a comprehensive interface for training and evaluating neural networks:
+
+**Initial Interface**
+![Web UI Initial View](images/01-web-ui-initial-2025-10-14T01-35-30-210Z.png)
+*Clean, modern interface with training configuration, visualization panels, and network testing*
+
+**Remote API Training Mode**
+![Configuration with Remote API](images/02-configuration-remote-2025-10-14T01-36-46-614Z.png)
+*Select between local WASM training or remote server training with SSE streaming*
+
+**Training in Progress**
+![Training in Progress](images/03-training-in-progress-2025-10-14T01-36-58-428Z.png)
+*Real-time loss chart updates as training progresses on the server*
+
+**Training Completed**
+![Training Completed](images/04-training-completed-2025-10-14T01-37-02-116Z.png)
+*Complete training history with loss curve and final metrics*
+
+**Network Testing & Truth Table**
+![Network Testing](images/05-network-testing-2025-10-14T01-37-10-849Z.png)
+*Interactive testing interface with truth table showing all input combinations and prediction accuracy*
+
+**Local WASM Mode**
+![WASM Mode Configuration](images/06-wasm-mode-config-2025-10-14T01-37-20-298Z.png)
+*Train directly in the browser using WebAssembly - no server required for training*
+
 ## Architecture Details
 
 ### Matrix Library
