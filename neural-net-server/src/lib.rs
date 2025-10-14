@@ -4,10 +4,12 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::Json,
+    response::{Json, sse::{Event, Sse}},
     routing::{get, post},
     Router,
 };
+use futures::stream::{self, Stream};
+use std::convert::Infallible;
 use neural_network::{
     activations::SIGMOID,
     examples,
@@ -238,20 +240,126 @@ async fn model_info(
     }))
 }
 
+/// Train with SSE progress streaming
+async fn train_stream(
+    State(state): State<AppState>,
+    Json(req): Json<TrainRequest>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, (StatusCode, String)> {
+    // Get example
+    let example = examples::get_example(&req.example)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Unknown example: {}", req.example),
+            )
+        })?;
+
+    // Create channel for progress updates (use std mpsc for Send compatibility)
+    let (tx, rx) = std::sync::mpsc::channel::<(u32, f64)>();
+
+    // Spawn blocking training task
+    let example_name = req.example.clone();
+    let epochs = req.epochs;
+    let learning_rate = req.learning_rate;
+    let state_clone = state.clone();
+    let inputs = example.inputs.clone();
+    let targets = example.targets.clone();
+    let arch = example.recommended_arch.clone();
+
+    tokio::task::spawn_blocking(move || {
+        // Create network
+        let network = Network::new(arch, SIGMOID, learning_rate);
+
+        // Create training config
+        let config = TrainingConfig {
+            epochs,
+            checkpoint_interval: None,
+            checkpoint_path: None,
+            verbose: false,
+            example_name: Some(example_name.clone()),
+        };
+
+        let mut controller = TrainingController::new(network, config);
+
+        // Add callback to send progress
+        let tx_clone = tx.clone();
+        controller.add_callback(Box::new(move |epoch, loss, _network| {
+            let _ = tx_clone.send((epoch, loss));
+        }));
+
+        // Train the network
+        if let Ok(()) = controller.train(inputs, targets) {
+            // Store model after training
+            let model_id = Uuid::new_v4().to_string();
+            let stored_model = StoredModel {
+                network: controller.into_network(),
+                example: example_name,
+                epochs,
+                learning_rate,
+            };
+            state_clone
+                .models
+                .lock()
+                .unwrap()
+                .insert(model_id, stored_model);
+        }
+    });
+
+    // Create SSE stream from std mpsc receiver
+    let stream = stream::unfold(rx, |rx| async move {
+        // Convert std::sync::mpsc to async stream
+        match rx.try_recv() {
+            Ok((epoch, loss)) => {
+                let data = serde_json::json!({
+                    "epoch": epoch,
+                    "loss": loss
+                });
+                Some((
+                    Ok::<_, Infallible>(Event::default().data(data.to_string())),
+                    rx
+                ))
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                // Wait a bit and try again
+                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                Some((
+                    Ok::<_, Infallible>(Event::default().comment("heartbeat")),
+                    rx
+                ))
+            }
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => None,
+        }
+    });
+
+    Ok(Sse::new(stream))
+}
+
 /// Run the web server on the specified address
 pub async fn run_server(addr: &str) -> Result<(), anyhow::Error> {
+    use tower_http::services::ServeDir;
+    use tower_http::cors::CorsLayer;
+
     let state = AppState::new();
 
-    let app = Router::new()
+    // API routes
+    let api_routes = Router::new()
         .route("/health", get(health))
         .route("/api/examples", get(list_examples))
         .route("/api/train", post(train))
+        .route("/api/train/stream", post(train_stream))
         .route("/api/eval", post(eval))
         .route("/api/models/:id", get(model_info))
         .with_state(state);
 
+    // Static file serving for future web UI
+    let app = api_routes
+        .nest_service("/", ServeDir::new("static").fallback(ServeDir::new("static/index.html")))
+        .layer(CorsLayer::permissive());
+
     let listener = tokio::net::TcpListener::bind(addr).await?;
     println!("Server running on http://{}", addr);
+    println!("API endpoints available at /api/*");
+    println!("Static files served from ./static/");
 
     axum::serve(listener, app).await?;
 

@@ -26,7 +26,7 @@ async fn test_list_examples() {
 
     let body: serde_json::Value = response.json().await.expect("Should parse JSON");
     assert!(body.is_array(), "Should return array of examples");
-    assert!(body.as_array().unwrap().len() > 0, "Should have at least one example");
+    assert!(!body.as_array().unwrap().is_empty(), "Should have at least one example");
 
     handle.abort();
 }
@@ -129,7 +129,7 @@ async fn test_model_info_endpoint() {
 
     // Get model info
     let response = client
-        .get(&format!("http://127.0.0.1:3013/api/models/{}", model_id))
+        .get(format!("http://127.0.0.1:3013/api/models/{}", model_id))
         .send()
         .await
         .expect("Should get response");
