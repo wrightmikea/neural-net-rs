@@ -62,6 +62,13 @@ enum Commands {
         #[arg(short, long)]
         input: Option<String>,
     },
+
+    /// Display detailed model information
+    Info {
+        /// Path to model file
+        #[arg(short, long)]
+        model: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -88,6 +95,9 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::Eval { model, input } => {
             cmd_eval(&model, input)?;
+        }
+        Commands::Info { model } => {
+            cmd_info(&model)?;
         }
     }
 
@@ -261,3 +271,64 @@ fn cmd_eval(model: &str, input: Option<String>) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Display detailed model information
+fn cmd_info(model: &str) -> anyhow::Result<()> {
+    use neural_network::network::Network;
+    use std::path::Path;
+
+    let model_path = Path::new(model);
+
+    // Load model
+    let (network, metadata) = Network::load_checkpoint(model_path)?;
+
+    // Display header
+    println!("Model Information");
+    println!("================");
+    println!();
+
+    // Display metadata
+    println!("Metadata:");
+    println!("  Version: {}", metadata.version);
+    println!("  Example: {}", metadata.example);
+    println!("  Training Epochs: {}", metadata.epoch);
+    println!("  Total Epochs: {}", metadata.total_epochs);
+    println!("  Learning Rate: {}", metadata.learning_rate);
+    println!("  Timestamp: {}", metadata.timestamp);
+    println!();
+
+    // Display architecture
+    println!("Architecture:");
+    println!("  Layers: {:?}", network.layers);
+    println!("  Input neurons: {}", network.layers[0]);
+    println!("  Output neurons: {}", network.layers[network.layers.len() - 1]);
+    if network.layers.len() > 2 {
+        println!("  Hidden layers: {}", network.layers.len() - 2);
+    }
+    println!();
+
+    // Display weight matrices
+    println!("Weights:");
+    let mut total_params = 0;
+    for (i, weight) in network.weights.iter().enumerate() {
+        let params = weight.rows * weight.cols;
+        total_params += params;
+        println!("  Layer {} -> {}: {}x{} ({} parameters)",
+            i, i + 1, weight.rows, weight.cols, params);
+    }
+    println!();
+
+    // Display bias vectors
+    println!("Biases:");
+    for (i, bias) in network.biases.iter().enumerate() {
+        let params = bias.rows;
+        total_params += params;
+        println!("  Layer {}: {}x{} ({} parameters)",
+            i + 1, bias.rows, bias.cols, params);
+    }
+    println!();
+
+    // Display total parameters
+    println!("Total Parameters: {}", total_params);
+
+    Ok(())
+}
