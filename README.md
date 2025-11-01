@@ -8,8 +8,21 @@ This project demonstrates fundamental neural network concepts through a clean, w
 
 **[Live Demo](https://wrightmikea.github.io/neural-net-rs/)** - Try the interactive web UI in your browser!
 
-![Neural Network Training Platform](images/screenshot-v2.png)
-*Interactive web interface for training and evaluating neural networks with real-time visualization*
+![Neural Network Training Platform](images/screenshot-v3.png)
+*Interactive web interface demonstrating QUADRANT multi-class classification with dynamic inputs, training loss curve, and evaluation results*
+
+### Demonstrated Use Case: Multi-Class Classification
+
+The screenshot above shows the **QUADRANT Gate (2-4-4)** example, which demonstrates several advanced features:
+
+- **Multi-Class Classification**: Unlike simple binary outputs (AND, OR, XOR), this network classifies 2D points into one of four quadrants using one-hot encoding
+- **Dynamic UI Adaptation**: The interface automatically adjusts input fields and output displays based on the selected example's architecture
+- **Training Visualization**: The loss curve shows convergence from ~1.09 to ~0.002 over 1000 epochs, demonstrating successful learning
+- **Real-Time Evaluation**: Testing inputs (0.8, 0.8) correctly predicts "Class 1" with 98.1% confidence, corresponding to Quadrant I (positive x, positive y)
+- **Truth Table Analysis**: All four quadrant classifications are displayed with expected vs. predicted classes and confidence scores
+- **Architecture Display**: Visual representation shows the 2→4→4 network structure (2 inputs, 4 hidden neurons, 4 output classes)
+
+This example demonstrates how the platform handles complex classification problems beyond simple logic gates. The UI seamlessly supports all eight built-in examples, from simple 2-input gates to complex 9-input pattern recognition, automatically adapting the interface to match each problem's requirements.
 
 ## Features
 

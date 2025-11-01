@@ -11,6 +11,7 @@ import init, {
 // Application state
 let wasmModule;
 let currentNetwork = null;
+let currentExampleInfo = null;
 let trainingData = null;
 let lossHistory = [];
 let trainingStartTime = null;
@@ -75,6 +76,10 @@ async function loadExamples() {
         const examples = listExamples();
         elements.exampleSelect.innerHTML = '';
 
+        // Cache example data (we don't have access to training data in WASM)
+        // Truth table will work best for simple examples
+        window.exampleCache = {};
+
         examples.forEach(ex => {
             const option = document.createElement('option');
             option.value = ex.name;
@@ -102,11 +107,15 @@ function updateExampleInfo() {
     try {
         const exampleName = elements.exampleSelect.value;
         const info = getExampleInfo(exampleName);
+        currentExampleInfo = info;
 
         elements.exampleDescription.textContent = `${info.description} | Architecture: [${info.architecture.join(' → ')}]`;
 
         // Display architecture
         displayArchitecture(info.architecture);
+
+        // Update input/output UI
+        updateTestingUI(info.architecture);
 
     } catch (error) {
         console.error('Failed to update example info:', error);
@@ -124,6 +133,51 @@ function displayArchitecture(layers) {
         </div>
         ${idx < layers.length - 1 ? '<span class="architecture-arrow">→</span>' : ''}
     `).join('');
+}
+
+// Update testing UI based on architecture
+function updateTestingUI(architecture) {
+    const inputSize = architecture[0];
+    const outputSize = architecture[architecture.length - 1];
+
+    const testGrid = document.querySelector('.test-grid');
+    testGrid.innerHTML = '';
+
+    // Create input fields
+    for (let i = 0; i < inputSize; i++) {
+        const inputDiv = document.createElement('div');
+        inputDiv.className = 'form-group';
+        inputDiv.innerHTML = `
+            <label for="input${i}">Input ${i + 1}</label>
+            <input type="number" id="input${i}" value="0.0" min="-1" max="1" step="0.1">
+        `;
+        testGrid.appendChild(inputDiv);
+    }
+
+    // Add evaluate button
+    const buttonDiv = document.createElement('div');
+    buttonDiv.className = 'form-group';
+    buttonDiv.innerHTML = `<button id="evaluate-button" class="btn btn-primary" disabled>Evaluate</button>`;
+    testGrid.appendChild(buttonDiv);
+
+    // Add output display
+    const outputDiv = document.createElement('div');
+    outputDiv.className = 'form-group';
+    outputDiv.innerHTML = `
+        <label>Output</label>
+        <div id="output-display" class="output-display">N/A</div>
+    `;
+    testGrid.appendChild(outputDiv);
+
+    // Re-attach event listeners
+    document.getElementById('evaluate-button').addEventListener('click', evaluateNetwork);
+    for (let i = 0; i < inputSize; i++) {
+        document.getElementById(`input${i}`).addEventListener('input', evaluateNetwork);
+    }
+
+    // Update elements reference
+    elements.evaluateButton = document.getElementById('evaluate-button');
+    elements.outputDisplay = document.getElementById('output-display');
 }
 
 // Start training
@@ -314,17 +368,35 @@ function updateTrainingTime() {
 
 // Evaluate network
 function evaluateNetwork() {
-    if (!currentNetwork) {
+    if (!currentNetwork || !currentExampleInfo) {
         elements.outputDisplay.textContent = 'Train first';
         return;
     }
 
     try {
-        const input1 = parseFloat(elements.input1.value);
-        const input2 = parseFloat(elements.input2.value);
+        const inputSize = currentExampleInfo.architecture[0];
+        const outputSize = currentExampleInfo.architecture[currentExampleInfo.architecture.length - 1];
 
-        const output = currentNetwork.evaluate([input1, input2]);
-        elements.outputDisplay.textContent = output[0].toFixed(4);
+        // Collect all input values
+        const inputs = [];
+        for (let i = 0; i < inputSize; i++) {
+            const inputElem = document.getElementById(`input${i}`);
+            if (inputElem) {
+                inputs.push(parseFloat(inputElem.value));
+            }
+        }
+
+        const outputs = currentNetwork.evaluate(inputs);
+
+        // Display output based on size
+        if (outputSize === 1) {
+            // Single output - show the value
+            elements.outputDisplay.textContent = outputs[0].toFixed(4);
+        } else {
+            // Multiple outputs - show predicted class (argmax)
+            const maxIdx = outputs.indexOf(Math.max(...outputs));
+            elements.outputDisplay.textContent = `Class ${maxIdx + 1} (${outputs[maxIdx].toFixed(3)})`;
+        }
 
     } catch (error) {
         console.error('Evaluation failed:', error);
@@ -334,39 +406,99 @@ function evaluateNetwork() {
 
 // Update truth table
 function updateTruthTable() {
-    if (!currentNetwork) return;
+    if (!currentNetwork || !currentExampleInfo) return;
 
-    const inputs = [
-        [0.0, 0.0],
-        [0.0, 1.0],
-        [1.0, 0.0],
-        [1.0, 1.0]
-    ];
+    const inputSize = currentExampleInfo.architecture[0];
+    const outputSize = currentExampleInfo.architecture[currentExampleInfo.architecture.length - 1];
 
+    // Hide truth table for complex examples (>3 inputs or >4 outputs)
+    const truthTableSection = document.getElementById('truth-table');
+    if (inputSize > 3 || outputSize > 4) {
+        truthTableSection.style.display = 'none';
+        return;
+    }
+    truthTableSection.style.display = 'block';
+
+    // Generate all binary combinations for inputs
+    const numCombinations = Math.pow(2, inputSize);
+    const testInputs = [];
+    for (let i = 0; i < numCombinations; i++) {
+        const input = [];
+        for (let j = inputSize - 1; j >= 0; j--) {
+            input.push((i >> j) & 1 ? 1.0 : 0.0);
+        }
+        testInputs.push(input);
+    }
+
+    // Build table header
+    let headerHtml = '<tr>';
+    for (let i = 0; i < inputSize; i++) {
+        headerHtml += `<th>In ${i + 1}</th>`;
+    }
+    if (outputSize === 1) {
+        headerHtml += '<th>Expected</th><th>Predicted</th><th>Error</th>';
+    } else {
+        headerHtml += '<th>Expected Class</th><th>Predicted Class</th><th>Confidence</th>';
+    }
+    headerHtml += '</tr>';
+
+    const thead = elements.truthTableBody.closest('table').querySelector('thead');
+    thead.innerHTML = headerHtml;
+
+    // Get example to find expected outputs
     const exampleName = elements.exampleSelect.value;
-    const expectedOutputs = {
-        'and': [0.0, 0.0, 0.0, 1.0],
-        'or': [0.0, 1.0, 1.0, 1.0],
-        'xor': [0.0, 1.0, 1.0, 0.0]
-    };
+    const example = window.exampleCache?.[exampleName];
 
-    const expected = expectedOutputs[exampleName] || [0, 0, 0, 0];
+    elements.truthTableBody.innerHTML = testInputs.map((input) => {
+        const outputs = currentNetwork.evaluate(input);
 
-    elements.truthTableBody.innerHTML = inputs.map((input, idx) => {
-        const output = currentNetwork.evaluate(input);
-        const predicted = output[0];
-        const error = Math.abs(predicted - expected[idx]);
-        const errorClass = error < 0.1 ? 'error-low' : 'error-high';
+        let row = '<tr>';
+        // Input columns
+        for (let val of input) {
+            row += `<td>${val.toFixed(1)}</td>`;
+        }
 
-        return `
-            <tr>
-                <td>${input[0].toFixed(1)}</td>
-                <td>${input[1].toFixed(1)}</td>
-                <td>${expected[idx].toFixed(1)}</td>
-                <td>${predicted.toFixed(4)}</td>
-                <td class="${errorClass}">${error.toFixed(4)}</td>
-            </tr>
-        `;
+        if (outputSize === 1) {
+            // Single output - show value and error
+            const predicted = outputs[0];
+            // Find expected value if we have training data
+            let expected = 0;
+            if (example && example.inputs) {
+                const matchIdx = example.inputs.findIndex(inp =>
+                    inp.every((v, i) => Math.abs(v - input[i]) < 0.01)
+                );
+                if (matchIdx >= 0 && example.targets[matchIdx]) {
+                    expected = example.targets[matchIdx][0];
+                }
+            }
+            const error = Math.abs(predicted - expected);
+            const errorClass = error < 0.1 ? 'error-low' : 'error-high';
+            row += `<td>${expected.toFixed(1)}</td>`;
+            row += `<td>${predicted.toFixed(4)}</td>`;
+            row += `<td class="${errorClass}">${error.toFixed(4)}</td>`;
+        } else {
+            // Multi-output - show predicted class
+            const maxIdx = outputs.indexOf(Math.max(...outputs));
+            const confidence = outputs[maxIdx];
+            // Find expected class
+            let expectedClass = 0;
+            if (example && example.inputs) {
+                const matchIdx = example.inputs.findIndex(inp =>
+                    inp.every((v, i) => Math.abs(v - input[i]) < 0.01)
+                );
+                if (matchIdx >= 0 && example.targets[matchIdx]) {
+                    expectedClass = example.targets[matchIdx].indexOf(1.0) + 1;
+                }
+            }
+            const correct = (maxIdx + 1) === expectedClass;
+            const classColor = correct ? 'error-low' : 'error-high';
+            row += `<td>${expectedClass}</td>`;
+            row += `<td class="${classColor}">${maxIdx + 1}</td>`;
+            row += `<td>${confidence.toFixed(3)}</td>`;
+        }
+
+        row += '</tr>';
+        return row;
     }).join('');
 }
 

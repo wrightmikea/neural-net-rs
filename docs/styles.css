@@ -256,7 +256,7 @@ header h1 {
 /* Testing Grid */
 .test-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) auto 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 15px;
     align-items: end;
     margin-bottom: 30px;
