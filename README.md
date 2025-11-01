@@ -8,6 +8,9 @@ This project demonstrates fundamental neural network concepts through a clean, w
 
 **[Live Demo](https://wrightmikea.github.io/neural-net-rs/)** - Try the interactive web UI in your browser!
 
+![Neural Network Training Platform](images/screenshot.png)
+*Interactive web interface for training and evaluating neural networks with real-time visualization*
+
 ## Features
 
 - **Feed-forward Neural Networks**: Configurable architecture with backpropagation training
